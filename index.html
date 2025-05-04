@@ -1,46 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TM NIGHTMARES - TMNS Rankings</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; }
-        .rank-table { width: 100%; border-collapse: collapse; }
-        .rank-table th, .rank-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        .rank-table th { background-color: #f2f2f2; }
-    </style>
+  <title>TM NIGHTMARES - Score Submit</title>
+  <!-- Firebase App (the core Firebase SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js"></script>
+  <!-- Firebase Realtime Database -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js"></script>
 </head>
 <body>
+  <h2>Score Submit (TM NIGHTMARES)</h2>
 
-    <h1>TM NIGHTMARES - TMNS Club Rankings</h1>
-    
-    <form id="score-form">
-        <label for="team">Team Name:</label>
-        <input type="text" id="team" required><br><br>
-        
-        <label for="score">Score:</label>
-        <input type="number" id="score" required><br><br>
-        
-        <button type="submit">Submit Score</button>
-    </form>
+  <form id="scoreForm">
+    Player Name: <input type="text" id="playerName" required><br><br>
+    Goals Scored: <input type="number" id="goals" required><br><br>
+    <button type="submit">Submit Score</button>
+  </form>
 
-    <h2>Current Rankings</h2>
-    <table class="rank-table" id="ranking-table">
-        <thead>
-            <tr>
-                <th>Rank</th>
-                <th>Team Name</th>
-                <th>Score</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Rankings will be populated here -->
-        </tbody>
-    </table>
+  <h2>Live Rank Table</h2>
+  <table border="1" id="rankTable">
+    <tr>
+      <th>Player</th>
+      <th>Total Goals</th>
+    </tr>
+  </table>
 
-    <script src="app.js"></script>
+  <script>
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbFB7_7T4iiWunM4egn0Ri-XFU0O9qI88",
+      authDomain: "tm-nightmares-club-rank.firebaseapp.com",
+      databaseURL: "https://tm-nightmares-club-rank-default-rtdb.firebaseio.com",
+      projectId: "tm-nightmares-club-rank",
+      storageBucket: "tm-nightmares-club-rank.firebasestorage.app",
+      messagingSenderId: "431120224631",
+      appId: "1:431120224631:web:e4ecfe2bc0a23b75875172",
+      measurementId: "G-HX1WKCMFHB"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Form submission
+    const form = document.getElementById("scoreForm");
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("playerName").value;
+      const goals = parseInt(document.getElementById("goals").value);
+
+      // Update the player's score in Firebase
+      const playerRef = database.ref("scores/" + name);
+      playerRef.get().then((snapshot) => {
+        const prevGoals = snapshot.exists() ? snapshot.val().goals : 0;
+        playerRef.set({
+          name: name,
+          goals: prevGoals + goals
+        });
+      });
+
+      form.reset();
+    });
+
+    // Rank table live update
+    const table = document.getElementById("rankTable");
+    database.ref("scores").on("value", (snapshot) => {
+      const data = snapshot.val();
+      table.innerHTML = "<tr><th>Player</th><th>Total Goals</th></tr>";
+      if (data) {
+        const players = Object.values(data);
+        players.sort((a, b) => b.goals - a.goals);
+        players.forEach((player) => {
+          const row = table.insertRow(-1);
+          row.insertCell(0).innerText = player.name;
+          row.insertCell(1).innerText = player.goals;
+        });
+      }
+    });
+  </script>
 </body>
 </html>
